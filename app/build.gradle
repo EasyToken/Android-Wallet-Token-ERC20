@@ -26,8 +26,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    compile 'org.web3j:core:3.0.1-android'
-    compile 'com.journeyapps:zxing-android-embedded:3.5.0'
-    compile 'com.github.kenglxn.QRGen:android:2.3.0'
-    compile 'com.googlecode.json-simple:json-simple:1.1'
+    implementation 'org.web3j:core:3.3.1-android'
+    implementation 'com.journeyapps:zxing-android-embedded:3.5.0'
+    implementation 'com.github.kenglxn.QRGen:android:2.3.0'
+    implementation 'com.googlecode.json-simple:json-simple:1.1'
 }
