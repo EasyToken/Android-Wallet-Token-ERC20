@@ -9,12 +9,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.simple.JSONObject;
+import org.spongycastle.util.encoders.Hex;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.RawTransaction;
+import org.web3j.crypto.TransactionEncoder;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Convert;
 
@@ -69,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
     File DataDir;
 
     TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance;
-    EditText sendtoaddress, sendtokenvalue;
+    EditText sendtoaddress, sendtokenvalue, sendethervalue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +92,9 @@ public class MainActivity extends AppCompatActivity {
         tokensymbolbalance = (TextView) findViewById(R.id.tokensymbolbalance);
 
         sendtoaddress = (EditText) findViewById(R.id.sendtoaddress); // Address for sending ether or token
-        sendtokenvalue = (EditText) findViewById(R.id.SendTokenValue); // Ammount coin for sending
+
+        sendtokenvalue = (EditText) findViewById(R.id.SendTokenValue); // Ammount token for sending
+        sendethervalue = (EditText) findViewById(R.id.SendEthValue); // Ammount ether for sending
 
         /**
          * Получаем полный путь к каталогу с ключами
@@ -129,19 +136,19 @@ public class MainActivity extends AppCompatActivity {
      * Start executing thread for sending Ether or sending Token
      */
     public void onClick(View view) {
-        SendingCoin sc = new SendingCoin();
+        SendingToken st = new SendingToken();
+        SendingEther se = new SendingEther();
         switch (view.getId()) {
             case R.id.SendEther:
-
+                se.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 break;
             case R.id.SendToken:
-                sc.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                st.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 break;
         }
 
     }
     //////// end on click /////////
-
 
     ///////////////////// Create and Load Wallet /////////////////
     public class WalletCreate extends AsyncTask<Void, Integer, JSONObject> {
@@ -257,9 +264,8 @@ public class MainActivity extends AppCompatActivity {
     }
     ////////////////// End create and load wallet ////////////////
 
-
-    ///////////////////// Sending Tokens /////////////////
-    public class SendingCoin extends AsyncTask<Void, Integer, JSONObject> {
+    ///////////////////////// Sending Tokens /////////////////////
+    public class SendingToken extends AsyncTask<Void, Integer, JSONObject> {
 
         @Override
         protected void onPreExecute() {
@@ -341,6 +347,104 @@ public class MainActivity extends AppCompatActivity {
             } else {System.out.println();}
         }
     }
-    ////////////////// End Sending Tokens ////////////////
+    /////////////////////// End Sending Tokens ///////////////////
+
+    ///////////////////////// Sending Ether //////////////////////
+    public class SendingEther  extends AsyncTask<Void, Integer, JSONObject> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected JSONObject doInBackground(Void... param) {
+
+                /**
+                 // Получаем список файлов в каталоге
+                 // Get list files in folder
+                 */
+                File KeyDir = new File(DataDir.getAbsolutePath());
+                File[] listfiles = KeyDir.listFiles();
+                File file = new File(String.valueOf(listfiles[0]));
+
+            try {
+                /**
+                 // Загружаем файл кошелька и получаем адрес
+                 // Upload the wallet file and get the address
+                 */
+                Credentials credentials = WalletUtils.loadCredentials(passwordwallet, file);
+                String address = credentials.getAddress();
+                System.out.println("Eth Address: " + address);
+
+                /**
+                 * Получаем счетчик транзакций
+                 * Get count transaction
+                 */
+                EthGetTransactionCount ethGetTransactionCount = web3.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).sendAsync().get();
+                BigInteger nonce = ethGetTransactionCount.getTransactionCount();
+
+                /**
+                 * Convert ammount ether to BigInteger
+                 */
+                BigInteger value = Convert.toWei(String.valueOf(sendethervalue.getText()), Convert.Unit.ETHER).toBigInteger();
+
+                /**
+                 * Транзакция
+                 * Transaction
+                 */
+                RawTransaction rawTransaction  = RawTransaction.createEtherTransaction(nonce, GAS_PRICE, GAS_LIMIT, String.valueOf(sendtoaddress.getText()), value);
+                byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+                String hexValue = "0x"+ Hex.toHexString(signedMessage);
+                EthSendTransaction ethSendTransaction = web3.ethSendRawTransaction(hexValue.toString()).sendAsync().get();
+
+                /**
+                 * Get Transaction Error and Hash
+                 */
+                System.out.println("Error: "+ ethSendTransaction.getError());
+                System.out.println("Transaction: " + ethSendTransaction.getTransactionHash());
+
+                /**
+                 * Возвращаем из потока, Адрес и Хэш транзакции
+                 * Returned from thread, Ether Address and transaction hash
+                 */
+                JSONObject JsonResult = new JSONObject();
+                JsonResult.put("Address", address);
+                JsonResult.put("TransactionHash", ethSendTransaction.getTransactionHash());
+
+                return JsonResult;
+
+            }catch (Exception ex) {ex.printStackTrace();}
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject result) {
+            super.onPostExecute(result);
+            try {
+                /**
+                 * Получаем баланс Ethereum
+                 * Get balance Ethereum
+                 */
+                EthGetBalance etherbalance = web3.ethGetBalance(result.get("Address").toString(), DefaultBlockParameterName.LATEST).sendAsync().get();
+                String ethbalanceafter = Convert.fromWei(String.valueOf(etherbalance.getBalance()), Convert.Unit.ETHER).toString();
+                System.out.println("Eth Balance: " + ethbalanceafter);
+
+                ethbalance.setText(ethbalanceafter);
+            } catch(Exception ex) {System.out.println(ex);}
+
+            Toast toast = Toast.makeText(getApplicationContext(),result.get("TransactionHash").toString(), Toast.LENGTH_LONG);
+            toast.show();
+        }
+
+    }
+    //////////////////// End Sending Ether ///////////////////////
 
 }
