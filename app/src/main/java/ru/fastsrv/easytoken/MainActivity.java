@@ -1,12 +1,25 @@
 package ru.fastsrv.easytoken;
 
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
@@ -76,6 +89,12 @@ public class MainActivity extends AppCompatActivity {
     TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance;
     EditText sendtoaddress, sendtokenvalue, sendethervalue;
 
+    ImageView qr_small, qr_big;
+
+    final Context context = this;
+
+    IntentIntegrator qrScan;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +114,10 @@ public class MainActivity extends AppCompatActivity {
 
         sendtokenvalue = (EditText) findViewById(R.id.SendTokenValue); // Ammount token for sending
         sendethervalue = (EditText) findViewById(R.id.SendEthValue); // Ammount ether for sending
+
+        qr_small = (ImageView)findViewById(R.id.qr_small);
+
+        qrScan = new IntentIntegrator(this);
 
         /**
          * Получаем полный путь к каталогу с ключами
@@ -129,8 +152,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    ///////////////////// QR Generation //////////////////////
+    /**
+     * QR генерация Ether Адреса
+     * QR Generation Ether Address
+     */
+    public Bitmap QRGen(String Value, int Width, int Heigth) {
+        MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
+        Bitmap bitmap = null;
+        try {
+            BitMatrix bitMatrix = multiFormatWriter.encode(Value, BarcodeFormat.DATA_MATRIX.QR_CODE, Width, Heigth);
+            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+            bitmap = barcodeEncoder.createBitmap(bitMatrix);
+            return bitmap;
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+    ////////////////// END QR Generation ////////////////////
 
-    ///////// On Click ////////////
+    ///////////////////// QR SCAN ///////////////////////////
+    /**
+     * QR сканирование Ether Адреса
+     * QR scan Ether Address
+     */
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            if (result.getContents() == null) {
+                Toast.makeText(this, "Result Not Found", Toast.LENGTH_LONG).show();
+            } else {
+                sendtoaddress.setText(result.getContents());
+                Toast.makeText(this, result.getContents(), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+    //////////////////// END QR SCAN ////////////////////////
+
+    /////////////////////// On Click /////////////////////////
     /**
      * Начать выполнение потока для отправки эфира или Токена
      * Start executing thread for sending Ether or sending Token
@@ -145,10 +208,22 @@ public class MainActivity extends AppCompatActivity {
             case R.id.SendToken:
                 st.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 break;
+            case R.id.qr_small:
+                final Dialog dialog = new Dialog(context);
+                dialog.setContentView(R.layout.qr_view);
+                qr_big = (ImageView) dialog.findViewById(R.id.qr_big);
+                    qr_big.setImageBitmap(QRGen(ethaddress.getText().toString(), 600, 600));
+                dialog.show();
+                break;
+            case R.id.qrScan:
+                qrScan.setOrientationLocked(false);
+                qrScan.setBarcodeImageEnabled(true);
+                qrScan.initiateScan();
+                break;
         }
 
     }
-    //////// end on click /////////
+    /////////////////////// end on click /////////////////////
 
     ///////////////////// Create and Load Wallet /////////////////
     public class WalletCreate extends AsyncTask<Void, Integer, JSONObject> {
@@ -259,6 +334,8 @@ public class MainActivity extends AppCompatActivity {
             tokenaddress.setText(result.get("tokenaddress").toString());
             tokenbalance.setText(result.get("tokenbalance").toString());
             tokensymbolbalance.setText(" "+result.get("tokensymbol").toString());
+
+            qr_small.setImageBitmap(QRGen(result.get("ethaddress").toString(), 200, 200));
 
         }
     }

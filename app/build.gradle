@@ -27,7 +27,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'org.web3j:core:3.3.1-android'
-    implementation 'com.journeyapps:zxing-android-embedded:3.5.0'
-    implementation 'com.github.kenglxn.QRGen:android:2.3.0'
+    implementation 'com.journeyapps:zxing-android-embedded:3.6.0'
     implementation 'com.googlecode.json-simple:json-simple:1.1'
+    implementation group: 'com.google.zxing', name: 'core', version: '3.3.2'
+    implementation group: 'com.journeyapps', name: 'zxing-android-embedded', version: '3.6.0'
 }

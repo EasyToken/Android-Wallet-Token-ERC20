@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="top|center_vertical"
@@ -20,6 +21,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0x0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/qr_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/button"
+            android:layout_centerHorizontal="true"
+            android:onClick="onClick" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -156,8 +173,16 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ems="10"
-                android:inputType="textPersonName"
-                android:text="0x14549fB98602ED63198c1Ea5A98C51A2B5E96FDE" />
+                android:inputType="textPersonName" />
+
+            <Button
+                android:id="@+id/qrScan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClick"
+                android:text="QR Scan" />
+
         </LinearLayout>
 
         <LinearLayout
