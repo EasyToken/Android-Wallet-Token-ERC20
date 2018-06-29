@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,6 +38,7 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Convert;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import static org.web3j.tx.Contract.GAS_LIMIT;
@@ -87,9 +89,12 @@ public class MainActivity extends AppCompatActivity {
     File DataDir;
 
     TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance;
+    TextView tv_gas_limit, tv_gas_price, tv_fee;
     EditText sendtoaddress, sendtokenvalue, sendethervalue;
 
     ImageView qr_small, qr_big;
+
+    BigInteger GasPrice, GasLimit;
 
     final Context context = this;
 
@@ -118,6 +123,17 @@ public class MainActivity extends AppCompatActivity {
         qr_small = (ImageView)findViewById(R.id.qr_small);
 
         qrScan = new IntentIntegrator(this);
+
+        tv_gas_limit = (TextView) findViewById(R.id.tv_gas_limit);
+        tv_gas_price = (TextView) findViewById(R.id.tv_gas_price);
+        tv_fee = (TextView) findViewById(R.id.tv_fee);
+
+        final SeekBar sb_gas_limit = (SeekBar) findViewById(R.id.sb_gas_limit);
+        sb_gas_limit.setOnSeekBarChangeListener(seekBarChangeListenerGL);
+        final SeekBar sb_gas_price = (SeekBar) findViewById(R.id.sb_gas_price);
+        sb_gas_price.setOnSeekBarChangeListener(seekBarChangeListenerGP);
+
+        GetFee();
 
         /**
          * Получаем полный путь к каталогу с ключами
@@ -192,6 +208,67 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     //////////////////// END QR SCAN ////////////////////////
+
+    /////////////////// SeekBar Listener ////////////////////
+    /**
+     * SeekBar Слушатель
+     * SeekBar Listener
+     */
+    private SeekBar.OnSeekBarChangeListener seekBarChangeListenerGL = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            GetGasLimit(String.valueOf(seekBar.getProgress()*1000+21000));
+        }
+        @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+        @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+    };
+    private SeekBar.OnSeekBarChangeListener seekBarChangeListenerGP = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            GetGasPrice(String.valueOf(seekBar.getProgress()+4));
+        }
+        @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+        @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+    };
+    ///////////////// END SeekBar Listener /////////////////
+
+    ///////////////////// Gas View /////////////////////////
+
+    /**
+     * Значение присваивается визуальным элементам
+     * The value is assigned to the visual elements
+     * @param value Value Gas Limit and Gas Price
+     */
+    public void GetGasLimit(String value) {
+        tv_gas_limit.setText(value);
+        GetFee();
+    }
+    public void GetGasPrice(String value) {
+        tv_gas_price.setText(value);
+        GetFee();
+    }
+    /////////////////////////////////////////////////////////////////
+
+    /////////////////////////// Get Fee /////////////////////////////
+
+    /**
+     * Значение GazLimit и GasPrice конвертируеться в BigInteger и присваиваеться глобальным переменным
+     * The value GazLimit and GasPrice converteres in BigInteger and prizhivaetsya global variables
+     *
+     * Расчет вознагрождения для майнеров
+     * calculate the fee for miners
+     */
+
+    public void GetFee(){
+        GasPrice = Convert.toWei(tv_gas_price.getText().toString(),Convert.Unit.GWEI).toBigInteger();
+        GasLimit = BigInteger.valueOf(Integer.valueOf(String.valueOf(tv_gas_limit.getText())));
+
+        // fee
+        BigDecimal fee = BigDecimal.valueOf(GasPrice.doubleValue()*GasLimit.doubleValue());
+        BigDecimal feeresult = Convert.fromWei(fee.toString(),Convert.Unit.ETHER);
+        tv_fee.setText(feeresult.toPlainString() + " ETH");
+    }
+    ///////////////////////// End Get Fee ///////////////////////////
 
     /////////////////////// On Click /////////////////////////
     /**
@@ -373,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
                  * Загружаем Токен
                  * Load Token
                  */
-                TokenERC20 token = TokenERC20.load(smartcontract, web3, credentials, GAS_PRICE, GAS_LIMIT);
+                TokenERC20 token = TokenERC20.load(smartcontract, web3, credentials, GasPrice, GasLimit);
 
                 String status = null;
                 String balance = null;
@@ -471,7 +548,7 @@ public class MainActivity extends AppCompatActivity {
                  * Транзакция
                  * Transaction
                  */
-                RawTransaction rawTransaction  = RawTransaction.createEtherTransaction(nonce, GAS_PRICE, GAS_LIMIT, String.valueOf(sendtoaddress.getText()), value);
+                RawTransaction rawTransaction  = RawTransaction.createEtherTransaction(nonce, GasPrice, GasLimit, String.valueOf(sendtoaddress.getText()), value);
                 byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
                 String hexValue = "0x"+ Hex.toHexString(signedMessage);
                 EthSendTransaction ethSendTransaction = web3.ethSendRawTransaction(hexValue.toString()).sendAsync().get();
