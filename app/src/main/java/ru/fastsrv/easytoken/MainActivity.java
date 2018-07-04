@@ -41,9 +41,6 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static org.web3j.tx.Contract.GAS_LIMIT;
-import static org.web3j.tx.ManagedTransaction.GAS_PRICE;
-
 /**
  *
  * @author Dmitry Markelov
@@ -320,7 +317,6 @@ public class MainActivity extends AppCompatActivity {
             File KeyDir = new File(DataDir.getAbsolutePath());
             File[] listfiles = KeyDir.listFiles();
             File file = new File(String.valueOf(listfiles[0]));
-
             try {
                 /**
                 // Загружаем файл кошелька и получаем адрес
@@ -342,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
                 // Загружаем Токен
                 // Download Token
                 */
-                TokenERC20 token = TokenERC20.load(smartcontract, web3, credentials, GAS_PRICE, GAS_LIMIT);
+                TokenERC20 token = TokenERC20.load(smartcontract, web3, credentials, GasPrice, GasLimit);
 
                 /**
                 // Получаем название токена
@@ -403,16 +399,21 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(JSONObject result) {
             super.onPostExecute(result);
 
-            ethaddress.setText(result.get("ethaddress").toString());
-            ethbalance.setText(result.get("ethbalance").toString());
-            tokenname.setText(result.get("tokenname").toString());
-            tokensymbol.setText(result.get("tokensymbol").toString());
-            tokensupply.setText(result.get("tokensupply").toString());
-            tokenaddress.setText(result.get("tokenaddress").toString());
-            tokenbalance.setText(result.get("tokenbalance").toString());
-            tokensymbolbalance.setText(" "+result.get("tokensymbol").toString());
+            if (result != null ){
+                ethaddress.setText(result.get("ethaddress").toString());
+                ethbalance.setText(result.get("ethbalance").toString());
+                tokenname.setText(result.get("tokenname").toString());
+                tokensymbol.setText(result.get("tokensymbol").toString());
+                tokensupply.setText(result.get("tokensupply").toString());
+                tokenaddress.setText(result.get("tokenaddress").toString());
+                tokenbalance.setText(result.get("tokenbalance").toString());
+                tokensymbolbalance.setText(" "+result.get("tokensymbol").toString());
 
-            qr_small.setImageBitmap(QRGen(result.get("ethaddress").toString(), 200, 200));
+                qr_small.setImageBitmap(QRGen(result.get("ethaddress").toString(), 200, 200));
+            }
+            else{
+                System.out.println("Error!!!");
+            }
 
         }
     }
