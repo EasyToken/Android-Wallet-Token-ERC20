@@ -31,4 +31,5 @@ dependencies {
     implementation 'com.googlecode.json-simple:json-simple:1.1'
     implementation group: 'com.google.zxing', name: 'core', version: '3.3.2'
     implementation group: 'com.journeyapps', name: 'zxing-android-embedded', version: '3.6.0'
+    implementation 'org.bitcoinj:bitcoinj-core:0.14.7'
 }

@@ -40,11 +40,33 @@ import org.web3j.utils.Convert;
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import ru.fastsrv.easytoken.Gen.BIP44;
+import ru.fastsrv.easytoken.contract.SendingToken;
+import ru.fastsrv.easytoken.ethereum.SendingEther;
+import ru.fastsrv.easytoken.ethereum.WalletLoadFile;
 
 /**
  *
  * @author Dmitry Markelov
  * Telegram group: https://t.me/joinchat/D62dXAwO6kkm8hjlJTR9VA
+ *
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * Если есть вопросы, отвечу в телеграме
  * If you have any questions, I will answer the telegram
@@ -74,16 +96,12 @@ import java.math.BigInteger;
 
 public class MainActivity extends AppCompatActivity {
 
-    WalletCreate wc = new WalletCreate();
-
     String url = config.addressethnode();
 
     Web3j web3 = Web3jFactory.build(new HttpService(url));
 
     String smartcontract = config.addresssmartcontract();
     String passwordwallet = config.passwordwallet();
-
-    File DataDir;
 
     TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance;
     TextView tv_gas_limit, tv_gas_price, tv_fee;
@@ -96,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
     final Context context = this;
 
     IntentIntegrator qrScan;
+
+    Map<String, String> result;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,34 +156,124 @@ public class MainActivity extends AppCompatActivity {
          * Получаем полный путь к каталогу с ключами
          * Get the full path to the directory with the keys
          */
-        DataDir = this.getExternalFilesDir("/keys/");
-        File KeyDir = new File(this.DataDir.getAbsolutePath());
+        File keydir = this.getExternalFilesDir("/keystore/");
+
+
+        new setCredentional(keydir).execute();
 
         /**
          * Проверяем есть ли кошельки
          * Check whether there are purses
          */
-        File[] listfiles = KeyDir.listFiles();
+        File[] listfiles = keydir.listFiles();
         if (listfiles.length == 0 ) {
             /**
              * Если в директории файла кошелька, добавляем кошелек
              * If the directory file of the wallet, add the wallet
              */
-            try {
-                String fileName = WalletUtils.generateNewWalletFile(passwordwallet, DataDir, false);
+            /**
+             * Bip44
+             */
+            result = new BIP44(Global.getKeystoreDir()).Get();
 
-                System.out.println("FileName: " + DataDir.toString() + fileName);
-            } catch (Exception ex) {
-                System.out.println(ex);
-            }
+            setEthAddress(result.get("address"));
+            result.clear();
+            /**
+             * Default
+             */
+            //new Default(keystoredir).Get();
+
         } else {
             /**
              * Если кошелек создан, начинаем выполнение потока
              * If the wallet is created, start the thread
              */
-            wc.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            try {
+
+                Map<String,String> values = new HashMap<>();
+                values.put("smartcontract", smartcontract);
+                values.put("gasprice",GasPrice.toString());
+                values.put("gaslimit",GasLimit.toString());
+
+                result = new WalletLoadFile().execute(values).get();
+
+                setEthAddress(result.get("ethaddress"));
+                setEthBalance(result.get("ethbalance"));
+                setTokenName(result.get("tokenname"));
+                setTokenBalance(result.get("tokenbalance"));
+                setTokenAddress(result.get("tokenaddress"));
+                setTokenSupply(result.get("tokensupply"));
+                setTokenSymbol(result.get("tokensymbol"));
+                setTokenSymbolBalance(result.get("tokensymbol"));
+                result.clear();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            //wc.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
+
+    ///////////////////// UI /////////////////////////////////
+
+    /**
+     *
+     * @param ethAddress
+     */
+    private void setEthAddress(String ethAddress){
+        ethaddress.setText(ethAddress);
+    }
+    /**
+     *
+     * @param ethBalance
+     */
+    private void setEthBalance(String ethBalance){
+        ethbalance.setText(ethBalance);
+    }
+    /**
+     *
+     * @param tokenName
+     */
+    private void setTokenName(String tokenName){
+        tokenname.setText(tokenName);
+    }
+    /**
+     *
+     * @param tokenSymbol
+     */
+    private void setTokenSymbol(String tokenSymbol){
+        tokensymbol.setText(tokenSymbol);
+    }
+    /**
+     *
+     * @param tokenSupply
+     */
+    private void setTokenSupply(String tokenSupply){
+        tokensupply.setText(tokenSupply);
+    }
+    /**
+     *
+     * @param tokenAddress
+     */
+    private void setTokenAddress(String tokenAddress){
+        tokenaddress.setText(tokenAddress);
+    }
+    /**
+     *
+     * @param tokenBalance
+     */
+    private void setTokenBalance(String tokenBalance){
+        tokenbalance.setText(tokenBalance);
+    }
+    /**
+     *
+     * @param tokenSymbolBalance
+     */
+    private void setTokenSymbolBalance(String tokenSymbolBalance){
+        tokensymbolbalance.setText(" "+tokenSymbolBalance);
+    }
+    //////////////////////////////////////////////////////////
 
     ///////////////////// QR Generation //////////////////////
     /**
@@ -214,7 +324,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar.OnSeekBarChangeListener seekBarChangeListenerGL = new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            GetGasLimit(String.valueOf(seekBar.getProgress()*1000+21000));
+            GetGasLimit(String.valueOf(seekBar.getProgress()*1000+42000));
         }
         @Override public void onStartTrackingTouch(SeekBar seekBar) { }
         @Override public void onStopTrackingTouch(SeekBar seekBar) { }
@@ -222,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar.OnSeekBarChangeListener seekBarChangeListenerGP = new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            GetGasPrice(String.valueOf(seekBar.getProgress()+4));
+            GetGasPrice(String.valueOf(seekBar.getProgress()+12));
         }
         @Override public void onStartTrackingTouch(SeekBar seekBar) { }
         @Override public void onStopTrackingTouch(SeekBar seekBar) { }
@@ -273,14 +383,45 @@ public class MainActivity extends AppCompatActivity {
      * Start executing thread for sending Ether or sending Token
      */
     public void onClick(View view) {
-        SendingToken st = new SendingToken();
-        SendingEther se = new SendingEther();
+
+        Map<String, String> values = new HashMap<>();
         switch (view.getId()) {
             case R.id.SendEther:
-                se.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+                values.put("gasprice",String.valueOf(GasPrice));
+                values.put("gaslimit",String.valueOf(GasLimit));
+                values.put("sendtoaddress",sendtoaddress.getText().toString());
+                values.put("sendethervalue",sendethervalue.getText().toString());
+
+                try {
+                    result = new SendingEther(values).execute().get();
+                    setEthBalance(result.get("balance"));
+                        showToast(result.get("transactionhash"));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                values.clear();
                 break;
             case R.id.SendToken:
-                st.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+                values.put("gasprice",String.valueOf(GasPrice));
+                values.put("gaslimit",String.valueOf(GasLimit));
+                values.put("smartcontract",smartcontract);
+                values.put("sendtoaddress",sendtoaddress.getText().toString());
+                values.put("sendtokenvalue",sendtokenvalue.getText().toString());
+
+                try {
+                    result = new SendingToken(values).execute().get();
+                    setTokenBalance(result.get("balance"));
+                    showToast(result.get("status"));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                values.clear();
                 break;
             case R.id.qr_small:
                 final Dialog dialog = new Dialog(context);
@@ -299,24 +440,29 @@ public class MainActivity extends AppCompatActivity {
     }
     /////////////////////// end on click /////////////////////
 
-    ///////////////////// Create and Load Wallet /////////////////
-    public class WalletCreate extends AsyncTask<Void, Integer, JSONObject> {
+    private void showToast(String msg){
+        Toast toast = Toast.makeText(getApplicationContext(),msg, Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+    ///////////////////// Load Wallet /////////////////
+    @Deprecated
+    public class WalletCreate extends AsyncTask<File, Integer, JSONObject> {
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+
         }
 
         @Override
-        protected JSONObject doInBackground(Void... params) {
+        protected JSONObject doInBackground(File... params) {
 
             /**
             // Получаем список файлов в каталоге
             // Get list files in folder
             */
-            File KeyDir = new File(DataDir.getAbsolutePath());
-            File[] listfiles = KeyDir.listFiles();
-            File file = new File(String.valueOf(listfiles[0]));
+            File file = params[0];
             try {
                 /**
                 // Загружаем файл кошелька и получаем адрес
@@ -392,7 +538,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-
         }
 
         @Override
@@ -417,10 +562,10 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-    ////////////////// End create and load wallet ////////////////
-
+    ////////////////// End load wallet ////////////////
+    @Deprecated
     ///////////////////////// Sending Tokens /////////////////////
-    public class SendingToken extends AsyncTask<Void, Integer, JSONObject> {
+    public class SendingToken2 extends AsyncTask<File, Integer, JSONObject> {
 
         @Override
         protected void onPreExecute() {
@@ -428,15 +573,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected JSONObject doInBackground(Void... param) {
+        protected JSONObject doInBackground(File... params) {
 
             /**
              // Получаем список файлов в каталоге
              // Get list files in folder
              */
-            File KeyDir = new File(DataDir.getAbsolutePath());
-            File[] listfiles = KeyDir.listFiles();
-            File file = new File(String.valueOf(listfiles[0]));
+            File file = params[0];
 
             try {
                 /**
@@ -503,9 +646,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     /////////////////////// End Sending Tokens ///////////////////
-
+    @Deprecated
     ///////////////////////// Sending Ether //////////////////////
-    public class SendingEther  extends AsyncTask<Void, Integer, JSONObject> {
+    public class SendingEther2  extends AsyncTask<File, Integer, JSONObject> {
 
         @Override
         protected void onPreExecute() {
@@ -514,15 +657,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected JSONObject doInBackground(Void... param) {
+        protected JSONObject doInBackground(File... params) {
 
                 /**
                  // Получаем список файлов в каталоге
                  // Get list files in folder
                  */
-                File KeyDir = new File(DataDir.getAbsolutePath());
-                File[] listfiles = KeyDir.listFiles();
-                File file = new File(String.valueOf(listfiles[0]));
+                File file = params[0];
 
             try {
                 /**
