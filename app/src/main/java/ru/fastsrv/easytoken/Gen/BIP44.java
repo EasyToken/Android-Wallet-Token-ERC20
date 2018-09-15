@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ru.fastsrv.easytoken.Global;
 import ru.fastsrv.easytoken.config;
 import ru.fastsrv.easytoken.ethereum.crypto.MnemonicUtils;
 
@@ -57,6 +58,8 @@ public class BIP44 {
              * Use Web3J
              */
             Credentials credentials = Credentials.create(privKey.toString(16));
+
+            Global.setCredentials(credentials);
 
             System.out.println("seedCode: " + seedCode);
             System.out.println("Generate BitcoinJ address: " +credentials.getAddress());

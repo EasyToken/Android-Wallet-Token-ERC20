@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
     String smartcontract = config.addresssmartcontract();
     String passwordwallet = config.passwordwallet();
 
-    TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance;
+    TextView ethaddress, ethbalance, tokenname, tokensymbol, tokensupply, tokenaddress, tokenbalance, tokensymbolbalance, seedcode;
     TextView tv_gas_limit, tv_gas_price, tv_fee;
     EditText sendtoaddress, sendtokenvalue, sendethervalue;
 
@@ -131,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         tokenaddress = (TextView) findViewById(R.id.tokenaddress); // Token Address
         tokenbalance = (TextView) findViewById(R.id.tokenbalance); // Token Balance
         tokensymbolbalance = (TextView) findViewById(R.id.tokensymbolbalance);
+        seedcode = (TextView) findViewById(R.id.seedcode);
 
         sendtoaddress = (EditText) findViewById(R.id.sendtoaddress); // Address for sending ether or token
 
@@ -158,9 +159,6 @@ public class MainActivity extends AppCompatActivity {
          */
         File keydir = this.getExternalFilesDir("/keystore/");
 
-
-        new setCredentional(keydir).execute();
-
         /**
          * Проверяем есть ли кошельки
          * Check whether there are purses
@@ -174,9 +172,9 @@ public class MainActivity extends AppCompatActivity {
             /**
              * Bip44
              */
-            result = new BIP44(Global.getKeystoreDir()).Get();
-
+            result = new BIP44(keydir).Get();
             setEthAddress(result.get("address"));
+            setSeed(result.get("seedcode"));
             result.clear();
             /**
              * Default
@@ -188,6 +186,8 @@ public class MainActivity extends AppCompatActivity {
              * Если кошелек создан, начинаем выполнение потока
              * If the wallet is created, start the thread
              */
+            new setCredentional(keydir).execute();
+
             try {
 
                 Map<String,String> values = new HashMap<>();
@@ -272,6 +272,13 @@ public class MainActivity extends AppCompatActivity {
      */
     private void setTokenSymbolBalance(String tokenSymbolBalance){
         tokensymbolbalance.setText(" "+tokenSymbolBalance);
+    }
+    /**
+     *
+     * @param seed
+     */
+    private void setSeed(String seed){
+        seedcode.setText(seed);
     }
     //////////////////////////////////////////////////////////
 

@@ -8,7 +8,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.utils.Convert;
 
-import java.io.File;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +20,6 @@ public class WalletLoadFile extends AsyncTask<Map<String,String>, Integer, Map<S
 
     private String mPasswordwallet;
     private Web3j web3j;
-
-    private File mKeystoredir;
 
     public WalletLoadFile(){
         mPasswordwallet = config.passwordwallet();
