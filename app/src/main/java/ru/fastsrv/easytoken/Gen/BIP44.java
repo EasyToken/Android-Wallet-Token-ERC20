@@ -6,13 +6,10 @@ import org.bitcoinj.crypto.HDUtils;
 import org.bitcoinj.wallet.DeterministicKeyChain;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.UnreadableWalletException;
-import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.LinuxSecureRandom;
-import org.web3j.crypto.WalletUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -20,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 import ru.fastsrv.easytoken.Global;
+import ru.fastsrv.easytoken.MainActivity;
+import ru.fastsrv.easytoken.OnTaskCompleted;
 import ru.fastsrv.easytoken.config;
 import ru.fastsrv.easytoken.ethereum.crypto.MnemonicUtils;
 
@@ -29,12 +28,18 @@ public class BIP44 {
 
     private File mKeystoredir;
 
-    public BIP44(File keystoredir){
-        mKeystoredir = keystoredir;
+    private Credentials mCredentials;
+
+    private OnTaskCompleted onTaskCompleted;
+
+    public BIP44(MainActivity onTaskCompleted){
+        this.onTaskCompleted = onTaskCompleted;
         mPasswordwallet = config.passwordwallet();
     }
 
-    public Map<String, String> Get(){
+    public Map<String, String> Get(File keydir){
+
+        mKeystoredir = keydir;
 
         byte[] initialEntropy = new byte[16];
         secureRandom().nextBytes(initialEntropy);
@@ -57,31 +62,22 @@ public class BIP44 {
             /**
              * Use Web3J
              */
-            Credentials credentials = Credentials.create(privKey.toString(16));
+            mCredentials = Credentials.create(privKey.toString(16));
 
-            Global.setCredentials(credentials);
+            Global.setCredentials(mCredentials);
 
             System.out.println("seedCode: " + seedCode);
-            System.out.println("Generate BitcoinJ address: " +credentials.getAddress());
-            System.out.println("PrivateKey: " +credentials.getEcKeyPair().getPrivateKey());
-            System.out.println("PublicKey: " +credentials.getEcKeyPair().getPublicKey());
-
-            String FileWallet = WalletUtils.generateWalletFile(mPasswordwallet,credentials.getEcKeyPair(), mKeystoredir,false);
+            System.out.println("Generate BitcoinJ address: " +mCredentials.getAddress());
+            System.out.println("PrivateKey: " +mCredentials.getEcKeyPair().getPrivateKey());
+            System.out.println("PublicKey: " +mCredentials.getEcKeyPair().getPublicKey());
 
             Map<String, String> result = new HashMap<>();
             result.put("seedcode",seedCode);
-            result.put("address",credentials.getAddress());
-            result.put("privatekey",credentials.getEcKeyPair().getPrivateKey().toString());
-            result.put("publickey",credentials.getEcKeyPair().getPublicKey().toString());
-            System.out.println("BIP44 FILE Wallet: "+ FileWallet);
+            result.put("address",mCredentials.getAddress());
 
+            onTaskCompleted.onTaskCompleted(result);
             return result;
-
         } catch (UnreadableWalletException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (CipherException e) {
             e.printStackTrace();
         }
         return null;
@@ -111,6 +107,5 @@ public class BIP44 {
         }
         return isAndroid == 1;
     }
-
 
 }

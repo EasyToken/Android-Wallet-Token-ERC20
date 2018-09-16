@@ -119,22 +119,5 @@ public class WalletLoadFile extends AsyncTask<Map<String,String>, Integer, Map<S
     @Override
     protected void onPostExecute(Map<String, String> result) {
         super.onPostExecute(result);
-
-        if (result != null ){
-            //ethaddress.setText(result.get("ethaddress").toString());
-            //ethbalance.setText(result.get("ethbalance").toString());
-            //tokenname.setText(result.get("tokenname").toString());
-            //tokensymbol.setText(result.get("tokensymbol").toString());
-            //tokensupply.setText(result.get("tokensupply").toString());
-            //tokenaddress.setText(result.get("tokenaddress").toString());
-            //tokenbalance.setText(result.get("tokenbalance").toString());
-            //tokensymbolbalance.setText(" "+result.get("tokensymbol").toString());
-
-            //qr_small.setImageBitmap(QRGen(result.get("ethaddress").toString(), 200, 200));
-        }
-        else{
-            System.out.println("Error!!!");
-        }
-
     }
 }

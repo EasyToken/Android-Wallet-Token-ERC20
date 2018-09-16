@@ -94,7 +94,7 @@ import ru.fastsrv.easytoken.ethereum.WalletLoadFile;
  *
  */
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnTaskCompleted{
 
     String url = config.addressethnode();
 
@@ -116,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
     IntentIntegrator qrScan;
 
     Map<String, String> result;
+
+    File keydir;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,14 +159,16 @@ public class MainActivity extends AppCompatActivity {
          * Получаем полный путь к каталогу с ключами
          * Get the full path to the directory with the keys
          */
-        File keydir = this.getExternalFilesDir("/keystore/");
+        keydir = this.getExternalFilesDir("/keystore/");
 
         /**
          * Проверяем есть ли кошельки
          * Check whether there are purses
          */
         File[] listfiles = keydir.listFiles();
+        System.out.println(listfiles.length);
         if (listfiles.length == 0 ) {
+            System.out.println("Create");
             /**
              * Если в директории файла кошелька, добавляем кошелек
              * If the directory file of the wallet, add the wallet
@@ -172,47 +176,55 @@ public class MainActivity extends AppCompatActivity {
             /**
              * Bip44
              */
-            result = new BIP44(keydir).Get();
-            setEthAddress(result.get("address"));
-            setSeed(result.get("seedcode"));
-            result.clear();
+            new BIP44(this).Get(keydir);
+            new SaveWallet(keydir).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             /**
              * Default
              */
-            //new Default(keystoredir).Get();
-
+            //new Default(keystoredir).Get(); //Default Create wallet in Web3j lib
         } else {
+            System.out.println("Load");
             /**
              * Если кошелек создан, начинаем выполнение потока
              * If the wallet is created, start the thread
              */
-            new setCredentional(keydir).execute();
-
-            try {
-
-                Map<String,String> values = new HashMap<>();
-                values.put("smartcontract", smartcontract);
-                values.put("gasprice",GasPrice.toString());
-                values.put("gaslimit",GasLimit.toString());
-
-                result = new WalletLoadFile().execute(values).get();
-
-                setEthAddress(result.get("ethaddress"));
-                setEthBalance(result.get("ethbalance"));
-                setTokenName(result.get("tokenname"));
-                setTokenBalance(result.get("tokenbalance"));
-                setTokenAddress(result.get("tokenaddress"));
-                setTokenSupply(result.get("tokensupply"));
-                setTokenSymbol(result.get("tokensymbol"));
-                setTokenSymbolBalance(result.get("tokensymbol"));
-                result.clear();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-            //wc.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new setCredentional(keydir, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
+    }
+
+    private void getWallet(){
+        try {
+
+            Map<String,String> values = new HashMap<>();
+            values.put("smartcontract", smartcontract);
+            values.put("gasprice",GasPrice.toString());
+            values.put("gaslimit",GasLimit.toString());
+
+            result = new WalletLoadFile().execute(values).get();
+
+            setEthAddress(result.get("ethaddress"));
+            setEthBalance(result.get("ethbalance"));
+            setTokenName(result.get("tokenname"));
+            setTokenBalance(result.get("tokenbalance"));
+            setTokenAddress(result.get("tokenaddress"));
+            setTokenSupply(result.get("tokensupply"));
+            setTokenSymbol(result.get("tokensymbol"));
+            setTokenSymbolBalance(result.get("tokensymbol"));
+            result.clear();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onTaskCompleted(Map<String,String> result) {
+        if(result != null) {
+            setEthAddress(result.get("address"));
+            setSeed(result.get("seedcode"));
+        }
+    getWallet();
     }
 
     ///////////////////// UI /////////////////////////////////

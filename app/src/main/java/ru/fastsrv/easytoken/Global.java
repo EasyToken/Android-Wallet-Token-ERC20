@@ -7,6 +7,7 @@ public class Global {
     private static Credentials sCredentials;
 
     public static void setCredentials(Credentials credentials){
+        System.out.println("Set Credentials");
         sCredentials = credentials;
     }
     public static Credentials getCredentials(){

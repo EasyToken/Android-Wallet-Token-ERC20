@@ -11,12 +11,13 @@ import java.io.IOException;
 
 public class setCredentional extends AsyncTask<Void, Void, Void> {
 
-    public Integer mResult = 0;
     private File mKeystore;
     private Credentials mCredentials;
+    private OnTaskCompleted onTaskCompleted;
 
-    public setCredentional(File keystore){
+    public setCredentional(File keystore, OnTaskCompleted onTaskCompleted){
         mKeystore = keystore;
+        this.onTaskCompleted = onTaskCompleted;
     }
 
     @Override
@@ -50,7 +51,7 @@ public class setCredentional extends AsyncTask<Void, Void, Void> {
     @Override
     protected void onPostExecute(Void result) {
         super.onPostExecute(result);
-        mResult = 1;
+        onTaskCompleted.onTaskCompleted(null);
     }
 
 }
