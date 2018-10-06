@@ -5,7 +5,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId 'info.bcdev.easytoken'
-        minSdkVersion 21
+        minSdkVersion 16
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"

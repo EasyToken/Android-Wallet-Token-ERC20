@@ -168,7 +168,9 @@ public class MainActivity extends AppCompatActivity implements CBGetCredential, 
 
         toastMsg = new ToastMsg();
 
-        keydir = this.getExternalFilesDir("/keystore/");
+        //keydir = this.getFilesDir("/keystore/");
+
+        keydir = this.getFilesDir();
 
         File[] listfiles = keydir.listFiles();
         if (listfiles.length == 0 ) {
