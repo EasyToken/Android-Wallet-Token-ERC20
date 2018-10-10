@@ -49,6 +49,7 @@ I would be grateful for feedback on errors, shortcomings.
 ## Projects using this repo
 
 * [iWallet](https://play.google.com/store/apps/details?id=tech.insense.sensewalet)
+* [EthereumPaperWallet](https://play.google.com/store/apps/details?id=info.bcdev.ethereumpaperwallet)
 
 ## Contributing
 
