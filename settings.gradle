@@ -1,1 +1,1 @@
-include ':app', ':librarysdkew'
+Reverse ':app', ':librarysdkew'
